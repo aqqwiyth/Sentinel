@@ -112,6 +112,9 @@ public class FlowRuleManager extends AbstractRuleManager {
         }
 
         for (FlowRule rule : list) {
+            if (!isValid(rule)) {
+                continue;
+            }
             if (StringUtil.isBlank(rule.getLimitApp())) {
                 rule.setLimitApp(FlowRule.LIMIT_APP_DEFAULT);
             }
@@ -203,4 +206,7 @@ public class FlowRuleManager extends AbstractRuleManager {
 
     }
 
+    private static boolean isValid(FlowRule rule) {
+        return rule != null && !StringUtil.isBlank(rule.getResource());
+    }
 }
