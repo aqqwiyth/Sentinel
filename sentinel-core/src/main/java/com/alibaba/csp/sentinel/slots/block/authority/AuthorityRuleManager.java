@@ -20,16 +20,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import com.alibaba.csp.sentinel.log.RecordLog;
-import com.alibaba.csp.sentinel.util.StringUtil;
 import com.alibaba.csp.sentinel.context.Context;
+import com.alibaba.csp.sentinel.log.RecordLog;
 import com.alibaba.csp.sentinel.node.DefaultNode;
 import com.alibaba.csp.sentinel.property.DynamicSentinelProperty;
 import com.alibaba.csp.sentinel.property.PropertyListener;
 import com.alibaba.csp.sentinel.property.SentinelProperty;
 import com.alibaba.csp.sentinel.slotchain.ResourceWrapper;
+import com.alibaba.csp.sentinel.slots.block.AbstractRuleManager;
 import com.alibaba.csp.sentinel.slots.block.BlockException;
 import com.alibaba.csp.sentinel.slots.block.flow.FlowRule;
+import com.alibaba.csp.sentinel.util.StringUtil;
 
 /**
  * Manager for authority rules.
@@ -38,15 +39,15 @@ import com.alibaba.csp.sentinel.slots.block.flow.FlowRule;
  * @author jialiang.linjl
  * @author Eric Zhao
  */
-public class AuthorityRuleManager {
+public class AuthorityRuleManager extends AbstractRuleManager {
 
     private static Map<String, List<AuthorityRule>> authorityRules
-        = new ConcurrentHashMap<String, List<AuthorityRule>>();
+            = new ConcurrentHashMap<String, List<AuthorityRule>>();
 
     final static RulePropertyListener listener = new RulePropertyListener();
 
     private static SentinelProperty<List<AuthorityRule>> currentProperty
-        = new DynamicSentinelProperty<List<AuthorityRule>>();
+            = new DynamicSentinelProperty<List<AuthorityRule>>();
 
     static {
         currentProperty.addListener(listener);
@@ -72,12 +73,12 @@ public class AuthorityRuleManager {
     }
 
     public static void checkAuthority(ResourceWrapper resource, Context context, DefaultNode node, int count)
-        throws BlockException {
+            throws BlockException {
         if (authorityRules == null) {
             return;
         }
 
-        List<AuthorityRule> rules = authorityRules.get(resource.getName());
+        List<AuthorityRule> rules = getRules(authorityRules, resource.getName());
         if (rules == null) {
             return;
         }
@@ -119,6 +120,7 @@ public class AuthorityRuleManager {
             if (rules != null) {
                 authorityRules.putAll(rules);
             }
+            checkResourceNameHasWildcard(authorityRules);
             RecordLog.info("[AuthorityRuleManager] Authority rules received: " + authorityRules);
         }
 
@@ -156,6 +158,7 @@ public class AuthorityRuleManager {
             if (rules != null) {
                 authorityRules.putAll(rules);
             }
+            checkResourceNameHasWildcard(authorityRules);
             RecordLog.info("[AuthorityRuleManager] Load authority rules: " + authorityRules);
         }
     }

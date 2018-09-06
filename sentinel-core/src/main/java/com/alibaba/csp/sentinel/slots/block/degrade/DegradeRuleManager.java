@@ -15,11 +15,6 @@
  */
 package com.alibaba.csp.sentinel.slots.block.degrade;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-
 import com.alibaba.csp.sentinel.context.Context;
 import com.alibaba.csp.sentinel.log.RecordLog;
 import com.alibaba.csp.sentinel.node.DefaultNode;
@@ -27,15 +22,20 @@ import com.alibaba.csp.sentinel.property.DynamicSentinelProperty;
 import com.alibaba.csp.sentinel.property.PropertyListener;
 import com.alibaba.csp.sentinel.property.SentinelProperty;
 import com.alibaba.csp.sentinel.slotchain.ResourceWrapper;
+import com.alibaba.csp.sentinel.slots.block.AbstractRuleManager;
 import com.alibaba.csp.sentinel.slots.block.BlockException;
 import com.alibaba.csp.sentinel.slots.block.flow.FlowRule;
 import com.alibaba.csp.sentinel.util.StringUtil;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /***
  * @author youji.zj
  * @author jialiang.linjl
  */
-public class DegradeRuleManager {
+public class DegradeRuleManager extends AbstractRuleManager {
 
     private static volatile Map<String, List<DegradeRule>> degradeRules
         = new ConcurrentHashMap<String, List<DegradeRule>>();
@@ -68,7 +68,7 @@ public class DegradeRuleManager {
             return;
         }
 
-        List<DegradeRule> rules = degradeRules.get(resource.getName());
+        List<DegradeRule> rules = getRules(degradeRules, resource.getName());
         if (rules == null) {
             return;
         }
@@ -122,6 +122,7 @@ public class DegradeRuleManager {
                 degradeRules.clear();
                 degradeRules.putAll(rules);
             }
+            checkResourceNameHasWildcard(degradeRules);
             RecordLog.info("receive degrade config: " + degradeRules);
         }
 
@@ -132,6 +133,7 @@ public class DegradeRuleManager {
                 degradeRules.clear();
                 degradeRules.putAll(rules);
             }
+            checkResourceNameHasWildcard(degradeRules);
             RecordLog.info("init degrade config: " + degradeRules);
         }
 

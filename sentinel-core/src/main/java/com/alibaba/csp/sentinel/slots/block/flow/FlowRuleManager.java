@@ -24,20 +24,22 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import com.alibaba.csp.sentinel.concurrent.NamedThreadFactory;
-import com.alibaba.csp.sentinel.log.RecordLog;
-import com.alibaba.csp.sentinel.util.StringUtil;
 import com.alibaba.csp.sentinel.context.Context;
+import com.alibaba.csp.sentinel.log.RecordLog;
 import com.alibaba.csp.sentinel.node.DefaultNode;
 import com.alibaba.csp.sentinel.node.metric.MetricTimerListener;
 import com.alibaba.csp.sentinel.property.DynamicSentinelProperty;
 import com.alibaba.csp.sentinel.property.PropertyListener;
 import com.alibaba.csp.sentinel.property.SentinelProperty;
 import com.alibaba.csp.sentinel.slotchain.ResourceWrapper;
+import com.alibaba.csp.sentinel.slots.block.AbstractRuleManager;
 import com.alibaba.csp.sentinel.slots.block.BlockException;
 import com.alibaba.csp.sentinel.slots.block.RuleConstant;
 import com.alibaba.csp.sentinel.slots.block.flow.controller.DefaultController;
 import com.alibaba.csp.sentinel.slots.block.flow.controller.PaceController;
 import com.alibaba.csp.sentinel.slots.block.flow.controller.WarmUpController;
+import com.alibaba.csp.sentinel.util.StringUtil;
+
 
 /**
  * <p>
@@ -52,7 +54,7 @@ import com.alibaba.csp.sentinel.slots.block.flow.controller.WarmUpController;
  * @author jialiang.linjl
  */
 
-public class FlowRuleManager {
+public class FlowRuleManager extends AbstractRuleManager {
 
     private static final Map<String, List<FlowRule>> flowRules = new ConcurrentHashMap<String, List<FlowRule>>();
     private final static ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1,
@@ -142,8 +144,8 @@ public class FlowRuleManager {
     }
 
     public static void checkFlow(ResourceWrapper resource, Context context, DefaultNode node, int count)
-        throws BlockException {
-        List<FlowRule> rules = flowRules.get(resource.getName());
+            throws BlockException {
+        List<FlowRule> rules = getRules(flowRules, resource.getName());
         if (rules != null) {
             for (FlowRule rule : rules) {
                 if (!rule.passCheck(context, node, count)) {
@@ -184,6 +186,7 @@ public class FlowRuleManager {
                 flowRules.clear();
                 flowRules.putAll(rules);
             }
+            checkResourceNameHasWildcard(flowRules);
             RecordLog.info("[FlowRuleManager] Flow rules received: " + flowRules);
         }
 
@@ -194,6 +197,7 @@ public class FlowRuleManager {
                 flowRules.clear();
                 flowRules.putAll(rules);
             }
+            checkResourceNameHasWildcard(flowRules);
             RecordLog.info("[FlowRuleManager] Flow rules loaded: " + flowRules);
         }
 
