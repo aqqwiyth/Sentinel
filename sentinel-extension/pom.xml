@@ -17,6 +17,7 @@
         <module>sentinel-datasource-zookeeper</module>
         <module>sentinel-datasource-apollo</module>
         <module>sentinel-annotation-aspectj</module>
+        <module>sentinel-datasource-diamond</module>
     </modules>
 
 </project>
