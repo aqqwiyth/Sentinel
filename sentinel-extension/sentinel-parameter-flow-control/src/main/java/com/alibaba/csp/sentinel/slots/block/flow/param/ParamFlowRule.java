@@ -41,9 +41,9 @@ public class ParamFlowRule extends AbstractRule {
     }
 
     /**
-     * The threshold type of flow control (1: QPS).
+     * The threshold type of flow control (0: thread count, 1: QPS).
      */
-    private int blockGrade = RuleConstant.FLOW_GRADE_QPS;
+    private int grade = RuleConstant.FLOW_GRADE_QPS;
 
     /**
      * Parameter index.
@@ -65,12 +65,21 @@ public class ParamFlowRule extends AbstractRule {
      */
     private Map<Object, Integer> hotItems = new HashMap<Object, Integer>();
 
-    public int getBlockGrade() {
-        return blockGrade;
+    /**
+     * Indicating whether the rule is for cluster mode.
+     */
+    private boolean clusterMode = false;
+    /**
+     * Cluster mode specific config for parameter flow rule.
+     */
+    private ParamFlowClusterConfig clusterConfig;
+
+    public int getGrade() {
+        return grade;
     }
 
-    public ParamFlowRule setBlockGrade(int blockGrade) {
-        this.blockGrade = blockGrade;
+    public ParamFlowRule setGrade(int grade) {
+        this.grade = grade;
         return this;
     }
 
@@ -101,12 +110,37 @@ public class ParamFlowRule extends AbstractRule {
         return this;
     }
 
+    public Integer retrieveExclusiveItemCount(Object value) {
+        if (value == null || hotItems == null) {
+            return null;
+        }
+        return hotItems.get(value);
+    }
+
     Map<Object, Integer> getParsedHotItems() {
         return hotItems;
     }
 
     ParamFlowRule setParsedHotItems(Map<Object, Integer> hotItems) {
         this.hotItems = hotItems;
+        return this;
+    }
+
+    public boolean isClusterMode() {
+        return clusterMode;
+    }
+
+    public ParamFlowRule setClusterMode(boolean clusterMode) {
+        this.clusterMode = clusterMode;
+        return this;
+    }
+
+    public ParamFlowClusterConfig getClusterConfig() {
+        return clusterConfig;
+    }
+
+    public ParamFlowRule setClusterConfig(ParamFlowClusterConfig clusterConfig) {
+        this.clusterConfig = clusterConfig;
         return this;
     }
 
@@ -124,33 +158,38 @@ public class ParamFlowRule extends AbstractRule {
 
         ParamFlowRule rule = (ParamFlowRule)o;
 
-        if (blockGrade != rule.blockGrade) { return false; }
+        if (grade != rule.grade) { return false; }
         if (Double.compare(rule.count, count) != 0) { return false; }
+        if (clusterMode != rule.clusterMode) { return false; }
         if (paramIdx != null ? !paramIdx.equals(rule.paramIdx) : rule.paramIdx != null) { return false; }
-        return paramFlowItemList != null ? paramFlowItemList.equals(rule.paramFlowItemList) : rule.paramFlowItemList == null;
+        if (paramFlowItemList != null ? !paramFlowItemList.equals(rule.paramFlowItemList)
+            : rule.paramFlowItemList != null) { return false; }
+        return clusterConfig != null ? clusterConfig.equals(rule.clusterConfig) : rule.clusterConfig == null;
     }
 
     @Override
     public int hashCode() {
         int result = super.hashCode();
         long temp;
-        result = 31 * result + blockGrade;
+        result = 31 * result + grade;
         result = 31 * result + (paramIdx != null ? paramIdx.hashCode() : 0);
         temp = Double.doubleToLongBits(count);
         result = 31 * result + (int)(temp ^ (temp >>> 32));
         result = 31 * result + (paramFlowItemList != null ? paramFlowItemList.hashCode() : 0);
+        result = 31 * result + (clusterMode ? 1 : 0);
+        result = 31 * result + (clusterConfig != null ? clusterConfig.hashCode() : 0);
         return result;
     }
 
     @Override
     public String toString() {
         return "ParamFlowRule{" +
-            "resource=" + getResource() +
-            ", limitApp=" + getLimitApp() +
-            ", blockGrade=" + blockGrade +
+            "grade=" + grade +
             ", paramIdx=" + paramIdx +
             ", count=" + count +
             ", paramFlowItemList=" + paramFlowItemList +
+            ", clusterMode=" + clusterMode +
+            ", clusterConfig=" + clusterConfig +
             '}';
     }
 }
